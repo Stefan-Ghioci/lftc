@@ -4,10 +4,12 @@ public class BinarySearchTree<T extends Comparable<T>>
 {
 
     private Node<T> root;
+    private Integer size;
 
     public BinarySearchTree()
     {
         root = null;
+        size = 0;
     }
 
     public Node<T> getRoot()
@@ -41,6 +43,7 @@ public class BinarySearchTree<T extends Comparable<T>>
         if (root == null)
         {
             root = new Node<T>(key);
+            size++;
             return root;
         }
 
@@ -62,9 +65,14 @@ public class BinarySearchTree<T extends Comparable<T>>
         if (root != null)
         {
             printInOrderRec(root.getLeft());
-            System.out.print(root.getKey() + " ");
+            System.out.println(root.getKey());
             printInOrderRec(root.getRight());
         }
+    }
+
+    public Integer size()
+    {
+        return size;
     }
 
 }

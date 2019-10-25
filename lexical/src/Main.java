@@ -1,7 +1,6 @@
 import algorithm.Analyser;
 
 import java.io.File;
-import java.util.List;
 
 public class Main
 {
@@ -21,11 +20,7 @@ public class Main
 
 
             System.out.println("----------SYMBOLS TABLE----------");
-            List<String> symbols = analyser.getSymbols();
-            for (int i = 0; i < symbols.size(); i++)
-            {
-                System.out.println("index\t" + i + "\tvalue  " + symbols.get(i));
-            }
+            analyser.getSymbols().printInOrder();
 
         }
         catch (Exception e)

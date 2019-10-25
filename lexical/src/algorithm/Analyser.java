@@ -1,7 +1,6 @@
 package algorithm;
 
-import data_structure.PifElement;
-import data_structure.Type;
+import data_structure.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,13 +20,13 @@ public class Analyser
     private List<String> separators;
     private List<PifElement> programInternalForm;
 
-    private List<String> symbols;
+    private SymbolBinarySearchTree symbols;
 
-    private String alphanumericRegex = "[a-zA-Z0-9]+";
+    private String alphanumericRegex = "[a-zA-Z0-9.]+";
     private String identifierRegex = "[a-zA-Z]+[0-9]*";
-    private String constantRegex = "0|[1-9]+[0-9]*|\".*\"";
+    private String constantRegex = "0|[1-9]+[0-9]*|\".*\"|[0-9][.][0-9]*[1-9][0-9]*|[1-9]*[.][0-9]*[1-9][0-9]*";
 
-    public List<String> getSymbols()
+    public BinarySearchTree<Symbol> getSymbols()
     {
         return symbols;
     }
@@ -40,7 +39,7 @@ public class Analyser
     public Analyser(File file)
     {
         this.programInternalForm = new ArrayList<>();
-        this.symbols = new ArrayList<>();
+        this.symbols = new SymbolBinarySearchTree();
         loadSpecification();
         loadFile(file);
     }
@@ -231,14 +230,16 @@ public class Analyser
 
     private Integer getIndexFromSymbolTable(String atom)
     {
-
-        int index = symbols.indexOf(atom);
-        if (index == -1)
+        try
         {
-            symbols.add(atom);
-            return symbols.indexOf(atom);
+            return symbols.searchByAtom(atom).getKey().getCode();
         }
-        return index;
+        catch (NullPointerException ignored)
+        {
+            Integer index = symbols.size();
+            symbols.insert(new Symbol(index, atom));
+            return index;
+        }
     }
 
 }
