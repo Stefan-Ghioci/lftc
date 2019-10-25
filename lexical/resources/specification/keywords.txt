@@ -1,0 +1,11 @@
+if
+else
+function
+int32
+return
+print
+main
+for
+read
+single
+double
