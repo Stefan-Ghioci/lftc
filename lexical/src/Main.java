@@ -128,6 +128,7 @@ public class Main
         printNfaElementsSubMenu();
         System.out.println("Enter command:");
         String command = consoleReader.readLine();
+        printSelectedElements(command, automata);
     }
 
     private static void printNfaElementsSubMenu()
