@@ -27,13 +27,13 @@ public class Main
                     switch (command)
                     {
                         case "1":
-                            automata = initializeNfaFromFile(consoleReader);
+                            automata = initializeDfaFromFile(consoleReader);
                             break;
                         case "2":
-                            automata = initializeNfaFromConsole(consoleReader);
+                            automata = initializeDfaFromConsole(consoleReader);
                             break;
                         case "3":
-                            printNfaElements(consoleReader, automata);
+                            printDfaElements(consoleReader, automata);
                             break;
                         case "4":
                             verifySequence(consoleReader, automata);
@@ -51,7 +51,7 @@ public class Main
                 }
                 catch (NullPointerException ignored)
                 {
-                    System.out.println("Initialize NFA before executing other commands.");
+                    System.out.println("Initialize DFA before executing other commands.");
                 }
                 catch (IOException e)
                 {
@@ -123,15 +123,15 @@ public class Main
         }
     }
 
-    private static void printNfaElements(BufferedReader consoleReader, FiniteAutomata automata) throws IOException
+    private static void printDfaElements(BufferedReader consoleReader, FiniteAutomata automata) throws IOException
     {
-        printNfaElementsSubMenu();
+        printDfaElementsSubMenu();
         System.out.println("Enter command:");
         String command = consoleReader.readLine();
         printSelectedElements(command, automata);
     }
 
-    private static void printNfaElementsSubMenu()
+    private static void printDfaElementsSubMenu()
     {
         System.out.println("1. Print alphabet");
         System.out.println("2. Print states");
@@ -140,7 +140,7 @@ public class Main
         System.out.println("5. Print transitions");
     }
 
-    private static FiniteAutomata initializeNfaFromConsole(BufferedReader consoleReader) throws IOException
+    private static FiniteAutomata initializeDfaFromConsole(BufferedReader consoleReader) throws IOException
     {
         System.out.println("Enter alphabet:");
         List<String> alphabet = Arrays.asList(consoleReader.readLine().split(" "));
@@ -177,7 +177,7 @@ public class Main
         return new FiniteAutomata(alphabet, states, initialState, finalStates, transitions);
     }
 
-    private static FiniteAutomata initializeNfaFromFile(BufferedReader consoleReader) throws IOException
+    private static FiniteAutomata initializeDfaFromFile(BufferedReader consoleReader) throws IOException
     {
         System.out.println("Enter filename:");
         String filename = consoleReader.readLine();
@@ -187,9 +187,9 @@ public class Main
     private static void printMenu()
     {
         System.out.println("------------------------------------------");
-        System.out.println("1. Initialize NFA from file");
-        System.out.println("2. Initialize NFA from console");
-        System.out.println("3. Print NFA elements");
+        System.out.println("1. Initialize DFA from file");
+        System.out.println("2. Initialize DFA from console");
+        System.out.println("3. Print DFA elements");
         System.out.println("4. Verify given sequence");
         System.out.println("5. Get longest prefix from given sequence");
         System.out.println("0. Exit");
