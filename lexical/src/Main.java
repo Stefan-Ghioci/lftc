@@ -3,6 +3,7 @@ import algorithm.FiniteAutomata;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class Main
                 {
                     System.out.println("Initialize DFA before executing other commands.");
                 }
-                catch (IOException e)
+                catch (Exception e)
                 {
                     System.out.println(e.getLocalizedMessage());
                 }
@@ -110,7 +111,7 @@ public class Main
             case "5":
                 List<String> alphabet = automata.getAlphabet();
                 List<String> states = automata.getStates();
-                String[][] transitions = automata.getTransitions();
+                List<List<List<String>>> transitions = automata.getTransitions();
 
                 System.out.print("S\t");
                 alphabet.forEach(symbol -> System.out.print(symbol + "\t"));
@@ -122,9 +123,12 @@ public class Main
                     System.out.print(states.get(i) + "\t");
 
                     for (String symbol : alphabet)
-                        for (int k = 0; k < transitions[i].length; k++)
-                            if (transitions[i][k].equals(symbol))
+                        for (int k = 0; k < transitions.get(i).size(); k++)
+                            if (transitions.get(i).get(k).contains(symbol))
+                            {
                                 System.out.print(states.get(k) + "\t");
+                                break;
+                            }
 
                     System.out.println();
                 }
@@ -167,11 +171,14 @@ public class Main
         List<String> finalStates = Arrays.asList(consoleReader.readLine().split(" "));
 
         System.out.println("Enter transitions (enter empty line to stop):");
-        String[][] transitions = new String[states.size()][states.size()];
 
-        for (String[] row : transitions)
+        List<List<List<String>>> transitions = new ArrayList<>();
+
+        for (int i = 0; i < states.size(); i++)
         {
-            Arrays.fill(row, "∅");
+            transitions.add(new ArrayList<>());
+            for (int j = 0; j < states.size(); j++)
+                transitions.get(i).add(new ArrayList<>());
         }
 
         String line = consoleReader.readLine();
@@ -180,10 +187,10 @@ public class Main
             List<String> list = Arrays.asList(line.split(" "));
 
             String startState = list.get(0);
-            String symbol = list.get(1);
+            String[] symbol = list.get(1).split(",");
             String endState = list.get(2);
 
-            transitions[states.indexOf(startState)][states.indexOf(endState)] = symbol;
+            transitions.get(states.indexOf(startState)).get(states.indexOf(endState)).addAll(Arrays.asList(symbol));
             line = consoleReader.readLine();
         }
         return new FiniteAutomata(alphabet, states, initialState, finalStates, transitions);

@@ -3,6 +3,7 @@ package algorithm;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public class FiniteAutomata
     private List<String> states;
     private String initialState;
     private List<String> finalStates;
-    private String[][] transitions;
+    private List<List<List<String>>> transitions;
 
 
     public String getLongestPrefix(String sequence)
@@ -40,9 +41,9 @@ public class FiniteAutomata
         {
             boolean transitionFound = false;
 
-            String[] row = transitions[states.indexOf(currentState)];
-            for (int i = 0; i < row.length; i++)
-                if (String.valueOf(symbol).equals(row[i]))
+            List<List<String>> row = transitions.get(states.indexOf(currentState));
+            for (int i = 0; i < row.size(); i++)
+                if (row.get(i).contains(String.valueOf(symbol)))
                 {
                     currentState = states.get(i);
                     transitionFound = true;
@@ -67,23 +68,25 @@ public class FiniteAutomata
 
         finalStates = Arrays.asList(reader.readLine().split(" "));
 
-        transitions = new String[states.size()][states.size()];
+        transitions = new ArrayList<>();
 
-        for (String[] row : transitions)
+        for (int i = 0; i < states.size(); i++)
         {
-            Arrays.fill(row, "∅");
+            transitions.add(new ArrayList<>());
+            for (int j = 0; j < states.size(); j++)
+                transitions.get(i).add(new ArrayList<>());
         }
 
-        String line = "";
+        String line;
         while ((line = reader.readLine()) != null)
         {
             List<String> list = Arrays.asList(line.split(" "));
 
             String startState = list.get(0);
-            String symbol = list.get(1);
+            String[] symbols = list.get(1).split(",");
             String endState = list.get(2);
 
-            transitions[states.indexOf(startState)][states.indexOf(endState)] = symbol;
+            transitions.get(states.indexOf(startState)).get(states.indexOf(endState)).addAll(Arrays.asList(symbols));
         }
     }
 
@@ -91,7 +94,7 @@ public class FiniteAutomata
                           List<String> states,
                           String initialState,
                           List<String> finalStates,
-                          String[][] transitions)
+                          List<List<List<String>>> transitions)
     {
         this.alphabet = alphabet;
         this.states = states;
@@ -120,7 +123,7 @@ public class FiniteAutomata
         return finalStates;
     }
 
-    public String[][] getTransitions()
+    public List<List<List<String>>> getTransitions()
     {
         return transitions;
     }
