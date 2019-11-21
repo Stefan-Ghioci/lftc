@@ -108,14 +108,26 @@ public class Main
                 System.out.println();
                 break;
             case "5":
+                List<String> alphabet = automata.getAlphabet();
                 List<String> states = automata.getStates();
-                for (String startState : states)
-                    for (String endState : states)
-                    {
-                        String symbol = automata.getTransitions()[states.indexOf(startState)][states.indexOf(endState)];
-                        if (!symbol.equals("∅"))
-                            System.out.println(startState + " " + symbol + " " + endState);
-                    }
+                String[][] transitions = automata.getTransitions();
+
+                System.out.print("S\t");
+                alphabet.forEach(symbol -> System.out.print(symbol + "\t"));
+                System.out.println();
+
+
+                for (int i = 0; i < states.size(); i++)
+                {
+                    System.out.print(states.get(i) + "\t");
+
+                    for (String symbol : alphabet)
+                        for (int k = 0; k < transitions[i].length; k++)
+                            if (transitions[i][k].equals(symbol))
+                                System.out.print(states.get(k) + "\t");
+
+                    System.out.println();
+                }
                 break;
             default:
                 System.out.println("Invalid command.");
