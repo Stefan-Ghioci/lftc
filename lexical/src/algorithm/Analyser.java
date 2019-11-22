@@ -25,7 +25,6 @@ public class Analyser
 
     private FiniteAutomata constantAutomata;
     private FiniteAutomata identifierAutomata;
-    private FiniteAutomata alphanumericAutomata;
 
     public BinarySearchTree<Symbol> getSymbols()
     {
@@ -57,7 +56,6 @@ public class Analyser
             constantAutomata.setTransitions(transitions);
 
             identifierAutomata = new FiniteAutomata("resources/automata/identifier");
-            alphanumericAutomata = new FiniteAutomata("resources/automata/alphanumeric");
         }
         catch (IOException e)
         {
@@ -93,100 +91,84 @@ public class Analyser
 
     public void analyse() throws Exception
     {
-        String atom = "";
-        String character;
-        int position = 0;
+        StringBuilder operatorBuffer = new StringBuilder();
+        String sequence;
+        String prefix;
+
+        int iterator = 0;
+        int position = 1;
         int lines = 1;
 
-        int quotationsOpen = 0;
-        int quotationOpenPosition = 0;
-        int quotationOpenLine = 0;
+        StringBuilder allCharacters = new StringBuilder();
+        byte[] bytes = reader.readAllBytes();
 
-        while (reader.available() > 0)
+        for (byte aByte : bytes)
         {
-
-            character = String.valueOf((char) reader.read());
-            position++;
-
-            if (character.equals("\r"))
-                continue;
-            if (character.equals("\n"))
-            {
-                lines++;
-                position = 0;
-                continue;
-            }
-
-
-            if (character.equals("\""))
-            {
-                quotationsOpen++;
-                if (quotationsOpen == 1)
-                {
-                    quotationOpenLine = lines;
-                    quotationOpenPosition = position;
-                }
-                if (quotationsOpen == 2)
-                {
-                    atom += character;
-                    classify(atom, position - atom.length() + 1, lines);
-                    atom = "";
-                    quotationsOpen = 0;
-                    continue;
-                }
-            }
-
-            if (quotationsOpen == 1)
-            {
-                atom += character;
-                continue;
-            }
-
-            if (alphanumericAutomata.verifySequence(character))
-            {
-                if (alphanumericAutomata.verifySequence(atom) || atom.isEmpty())
-                    atom += character;
-                else if (operators.contains(atom))
-                {
-                    classify(atom, position - atom.length() + 1, lines);
-                    atom = character;
-                }
-                else
-                    throw new Exception("Character \"" + character + "\" isn't recognized by the analyser. " +
-                                                getLocationFormattedString(position, lines));
-            }
-            else if (operators.contains(character))
-            {
-                if (alphanumericAutomata.verifySequence(atom))
-                {
-                    classify(atom, position - atom.length() + 1, lines);
-                    atom = character;
-                }
-                else if (operators.contains(atom) || atom.isEmpty())
-                {
-                    atom += character;
-                    if (!operators.contains(atom))
-                        throw new Exception("Operator \"" + character + "\" is misplaced. " +
-                                                    getLocationFormattedString(position, lines));
-                }
-            }
-            else if (separators.contains(character))
-            {
-                if (!atom.isEmpty())
-                {
-                    classify(atom, position - atom.length() + 1, lines);
-                    atom = "";
-                }
-                classify(character, position, lines);
-            }
-            else
-                throw new Exception("Character \"" + character + "\" isn't recognized by the analyser. " +
-                                            getLocationFormattedString(position, lines));
+            allCharacters.append((char) aByte);
         }
 
-        if (quotationsOpen == 1)
-            throw new Exception(" Quotation mark opened, but never closed. " +
-                                        getLocationFormattedString(quotationOpenPosition, quotationOpenLine));
+        while (iterator < allCharacters.length())
+        {
+            if (allCharacters.charAt(iterator) == '\r')
+            {
+                iterator += 2;
+                position = 1;
+                lines++;
+                continue;
+            }
+
+            if (separators.contains(String.valueOf(allCharacters.charAt(iterator))))
+            {
+                classify(String.valueOf(allCharacters.charAt(iterator)), position, lines);
+                iterator++;
+                position++;
+                continue;
+            }
+
+            if (operators.contains(String.valueOf(allCharacters.charAt(iterator))))
+            {
+                while (operators.contains(String.valueOf(allCharacters.charAt(iterator))))
+                {
+                    operatorBuffer.append(allCharacters.charAt(iterator));
+                    iterator++;
+                    position++;
+                }
+                if (operators.contains(operatorBuffer.toString()))
+                {
+                    classify(operatorBuffer.toString(), position, lines);
+                    operatorBuffer.delete(0, operatorBuffer.length());
+                    continue;
+                }
+                else
+                    throw new Exception("Operator concatenation \"" + operatorBuffer.toString() + "\" is invalid. " +
+                                                getLocationFormattedString(position, lines));
+            }
+
+            sequence = allCharacters.substring(iterator);
+
+            prefix = identifierAutomata.getLongestPrefix(sequence);
+
+            if (!prefix.equals("null"))
+            {
+                classify(prefix, position, lines);
+                iterator += prefix.length();
+                position += prefix.length();
+                continue;
+            }
+
+            prefix = constantAutomata.getLongestPrefix(sequence);
+
+            if (!prefix.equals("null"))
+            {
+                classify(prefix, position, lines);
+                iterator += prefix.length();
+                position += prefix.length();
+                continue;
+            }
+
+            throw new Exception("Invalid character \"" + allCharacters.charAt(iterator) + "\". " +
+                                        getLocationFormattedString(position, lines));
+        }
     }
 
     private String getLocationFormattedString(int position, int lines)
