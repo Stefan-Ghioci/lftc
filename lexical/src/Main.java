@@ -1,222 +1,65 @@
-import algorithm.FiniteAutomata;
+import algorithm.Analyser;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class Main
 {
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
-        FiniteAutomata automata = null;
+        File input;
+        Analyser analyser;
 
-        try (BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in)))
+        while (true)
         {
-            while (true)
+            System.out.println();
+            System.out.println("Choose a problem:");
+            System.out.println("1. Perimeter and area");
+            System.out.println("2. Sum of n given numbers");
+            System.out.println("3. Greatest Common Divisor");
+            System.out.println("x. Exit");
+
+
+            BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(System.in));
+
+            String problem = reader.readLine();
+            switch (problem)
             {
-                printMenu();
-
-                System.out.println("Enter command:");
-                String command = consoleReader.readLine();
-
-                try
-                {
-                    switch (command)
-                    {
-                        case "1":
-                            automata = initializeDfaFromFile(consoleReader);
-                            break;
-                        case "2":
-                            automata = initializeDfaFromConsole(consoleReader);
-                            break;
-                        case "3":
-                            printDfaElements(consoleReader, automata);
-                            break;
-                        case "4":
-                            verifySequence(consoleReader, automata);
-                            break;
-                        case "5":
-                            getLongestPrefix(consoleReader, automata);
-                            break;
-                        case "0":
-                            System.out.println("Exiting...");
-                            return;
-                        default:
-                            System.out.println("Invalid command.");
-                            break;
-                    }
-                }
-                catch (NullPointerException ignored)
-                {
-                    System.out.println("Initialize DFA before executing other commands.");
-                }
-                catch (Exception e)
-                {
-                    System.out.println(e.getLocalizedMessage());
-                }
+                case "1":
+                    input = new File("resources/per_area/");
+                    break;
+                case "2":
+                    input = new File("resources/nsum/");
+                    break;
+                case "3":
+                    input = new File("resources/gcd/");
+                    break;
+                case "x":
+                    System.exit(0);
+                default:
+                    continue;
             }
+            try
+            {
+                analyser = new Analyser(input);
+                analyser.analyse();
 
+                System.out.println("------PROGRAM INTERNAL FORM------");
+                analyser.getProgramInternalForm().forEach(System.out::println);
+
+
+                System.out.println("----------SYMBOLS TABLE----------");
+                analyser.getSymbols().printInOrder();
+
+            }
+            catch (Exception e)
+            {
+                System.out.println("ERROR:" + e.getMessage());
+            }
         }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-    }
-
-    private static void getLongestPrefix(BufferedReader consoleReader, FiniteAutomata automata) throws IOException
-    {
-        System.out.println("Enter sequence:");
-        String sequence = consoleReader.readLine();
-
-        System.out.println("Longest prefix is: " + automata.getLongestPrefix(sequence));
-    }
-
-    private static void verifySequence(BufferedReader consoleReader, FiniteAutomata automata) throws IOException
-    {
-        System.out.println("Enter sequence:");
-        String sequence = consoleReader.readLine();
-
-        boolean accepted = automata.verifySequence(sequence);
-
-        if (accepted)
-            System.out.println("Sequence is accepted.");
-        else
-            System.out.println("Sequence is not accepted.");
-    }
-
-    private static void printSelectedElements(String command, FiniteAutomata automata)
-    {
-        switch (command)
-        {
-            case "1":
-                automata.getAlphabet().forEach(symbol -> System.out.print(symbol + " "));
-                System.out.println();
-                break;
-            case "2":
-                automata.getStates().forEach(symbol -> System.out.print(symbol + " "));
-                System.out.println();
-                break;
-            case "3":
-                System.out.println(automata.getInitialState());
-                break;
-            case "4":
-                automata.getFinalStates().forEach(symbol -> System.out.print(symbol + " "));
-                System.out.println();
-                break;
-            case "5":
-                List<String> alphabet = automata.getAlphabet();
-                List<String> states = automata.getStates();
-                List<List<List<String>>> transitions = automata.getTransitions();
-
-                System.out.print("S\t");
-                alphabet.forEach(symbol -> System.out.print(symbol + "\t"));
-                System.out.println();
-
-
-                for (int i = 0; i < states.size(); i++)
-                {
-                    System.out.print(states.get(i) + "\t");
-
-                    for (String symbol : alphabet)
-                    {
-                        for (int k = 0; k < transitions.get(i).size(); k++)
-                        {
-                            if (transitions.get(i).get(k).contains(symbol))
-                            {
-                                System.out.print(states.get(k));
-                                break;
-                            }
-                        }
-                        System.out.print("\t");
-                    }
-
-                    System.out.println();
-                }
-                break;
-            default:
-                System.out.println("Invalid command.");
-                break;
-        }
-    }
-
-    private static void printDfaElements(BufferedReader consoleReader, FiniteAutomata automata) throws IOException
-    {
-        printDfaElementsSubMenu();
-        System.out.println("Enter command:");
-        String command = consoleReader.readLine();
-        printSelectedElements(command, automata);
-    }
-
-    private static void printDfaElementsSubMenu()
-    {
-        System.out.println("1. Print alphabet");
-        System.out.println("2. Print states");
-        System.out.println("3. Print initial state");
-        System.out.println("4. Print final states");
-        System.out.println("5. Print transitions");
-    }
-
-    private static FiniteAutomata initializeDfaFromConsole(BufferedReader consoleReader) throws IOException
-    {
-        System.out.println("Enter alphabet:");
-        List<String> alphabet = Arrays.asList(consoleReader.readLine().split(" "));
-
-        System.out.println("Enter states:");
-        List<String> states = Arrays.asList(consoleReader.readLine().split(" "));
-
-        System.out.println("Enter initial state:");
-        String initialState = consoleReader.readLine();
-
-        System.out.println("Enter final states:");
-        List<String> finalStates = Arrays.asList(consoleReader.readLine().split(" "));
-
-        System.out.println("Enter transitions (enter empty line to stop):");
-
-        List<List<List<String>>> transitions = new ArrayList<>();
-
-        for (int i = 0; i < states.size(); i++)
-        {
-            transitions.add(new ArrayList<>());
-            for (int j = 0; j < states.size(); j++)
-                transitions.get(i).add(new ArrayList<>());
-        }
-
-        String line = consoleReader.readLine();
-        while (!line.isBlank())
-        {
-            List<String> list = Arrays.asList(line.split(" "));
-
-            String startState = list.get(0);
-            String[] symbol = list.get(1).split(",");
-            String endState = list.get(2);
-
-            transitions.get(states.indexOf(startState)).get(states.indexOf(endState)).addAll(Arrays.asList(symbol));
-            line = consoleReader.readLine();
-        }
-        return new FiniteAutomata(alphabet, states, initialState, finalStates, transitions);
-    }
-
-    private static FiniteAutomata initializeDfaFromFile(BufferedReader consoleReader) throws IOException
-    {
-        System.out.println("Enter filename:");
-        String filename = consoleReader.readLine();
-        return new FiniteAutomata(filename);
-    }
-
-    private static void printMenu()
-    {
-        System.out.println("------------------------------------------");
-        System.out.println("1. Initialize DFA from file");
-        System.out.println("2. Initialize DFA from console");
-        System.out.println("3. Print DFA elements");
-        System.out.println("4. Verify given sequence");
-        System.out.println("5. Get longest prefix from given sequence");
-        System.out.println("0. Exit");
-        System.out.println("------------------------------------------");
     }
 }

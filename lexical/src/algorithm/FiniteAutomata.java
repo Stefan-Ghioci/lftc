@@ -33,7 +33,7 @@ public class FiniteAutomata
         return prefix;
     }
 
-    public boolean verifySequence(String sequence)
+    boolean verifySequence(String sequence)
     {
         String currentState = initialState;
 
@@ -56,7 +56,7 @@ public class FiniteAutomata
         return finalStates.contains(currentState);
     }
 
-    public FiniteAutomata(String filename) throws IOException
+    FiniteAutomata(String filename) throws IOException
     {
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
@@ -123,8 +123,13 @@ public class FiniteAutomata
         return finalStates;
     }
 
-    public List<List<List<String>>> getTransitions()
+    List<List<List<String>>> getTransitions()
     {
         return transitions;
+    }
+
+    void setTransitions(List<List<List<String>>> transitions)
+    {
+        this.transitions = transitions;
     }
 }

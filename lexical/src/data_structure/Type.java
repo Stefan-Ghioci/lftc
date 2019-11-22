@@ -2,9 +2,9 @@ package data_structure;
 
 public enum Type
 {
-    OPERATOR,
-    CONSTANT,
+    __OPERATOR,
+    __CONSTANT,
     IDENTIFIER,
-    SEPARATOR,
-    KEYWORD
+    _SEPARATOR,
+    ___KEYWORD
 }

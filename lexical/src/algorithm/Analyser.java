@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Analyser
@@ -22,9 +23,9 @@ public class Analyser
 
     private SymbolBinarySearchTree symbols;
 
-    private String alphanumericRegex = "[a-zA-Z0-9.]+";
-    private String identifierRegex = "[a-zA-Z]+[0-9]*";
-    private String constantRegex = "0|[1-9]+[0-9]*|\".*\"|[0-9][.][0-9]*[1-9][0-9]*|[1-9]*[.][0-9]*[1-9][0-9]*";
+    private FiniteAutomata constantAutomata;
+    private FiniteAutomata identifierAutomata;
+    private FiniteAutomata alphanumericAutomata;
 
     public BinarySearchTree<Symbol> getSymbols()
     {
@@ -42,6 +43,26 @@ public class Analyser
         this.symbols = new SymbolBinarySearchTree();
         loadSpecification();
         loadFile(file);
+        loadAutomatons();
+    }
+
+    private void loadAutomatons()
+    {
+        try
+        {
+            constantAutomata = new FiniteAutomata("resources/automata/constant");
+
+            List<List<List<String>>> transitions = constantAutomata.getTransitions();
+            transitions.get(6).get(6).addAll(Arrays.asList(" ", ","));
+            constantAutomata.setTransitions(transitions);
+
+            identifierAutomata = new FiniteAutomata("resources/automata/identifier");
+            alphanumericAutomata = new FiniteAutomata("resources/automata/alphanumeric");
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private void loadFile(File file)
@@ -121,9 +142,9 @@ public class Analyser
                 continue;
             }
 
-            if (character.matches(alphanumericRegex))
+            if (alphanumericAutomata.verifySequence(character))
             {
-                if (atom.matches(alphanumericRegex) || atom.isEmpty())
+                if (alphanumericAutomata.verifySequence(atom) || atom.isEmpty())
                     atom += character;
                 else if (operators.contains(atom))
                 {
@@ -136,7 +157,7 @@ public class Analyser
             }
             else if (operators.contains(character))
             {
-                if (atom.matches(alphanumericRegex))
+                if (alphanumericAutomata.verifySequence(atom))
                 {
                     classify(atom, position - atom.length() + 1, lines);
                     atom = character;
@@ -177,33 +198,33 @@ public class Analyser
     {
         Integer identifierCode = 1;
         Integer constantCode = 2;
-        Integer nonSymbolCodeBase = 3;
+        int nonSymbolCodeBase = 3;
 
         if (keywords.contains(atom))
         {
-            Type type = Type.KEYWORD;
+            Type type = Type.___KEYWORD;
             Integer code = nonSymbolCodeBase + keywords.indexOf(atom);
             Integer index = -1;
-            PifElement element = new PifElement(code, index, type);
+            PifElement element = new PifElement(code, index, type, atom);
             programInternalForm.add(element);
         }
         else if (operators.contains(atom))
         {
-            Type type = Type.OPERATOR;
+            Type type = Type.__OPERATOR;
             Integer code = nonSymbolCodeBase + keywords.size() + operators.indexOf(atom);
             Integer index = -1;
-            PifElement element = new PifElement(code, index, type);
+            PifElement element = new PifElement(code, index, type, atom);
             programInternalForm.add(element);
         }
         else if (separators.contains(atom))
         {
-            Type type = Type.SEPARATOR;
+            Type type = Type._SEPARATOR;
             Integer code = nonSymbolCodeBase + keywords.size() + operators.size() + separators.indexOf(atom);
             Integer index = -1;
-            PifElement element = new PifElement(code, index, type);
+            PifElement element = new PifElement(code, index, type, atom);
             programInternalForm.add(element);
         }
-        else if (atom.matches(identifierRegex))
+        else if (identifierAutomata.verifySequence(atom))
         {
             if (atom.length() > 8)
                 throw new Exception("Identifier \"" + atom + "\" is too long. " +
@@ -212,15 +233,15 @@ public class Analyser
             Type type = Type.IDENTIFIER;
             Integer index = getIndexFromSymbolTable(atom);
 
-            PifElement element = new PifElement(identifierCode, index, type);
+            PifElement element = new PifElement(identifierCode, index, type, atom);
             programInternalForm.add(element);
         }
-        else if (atom.matches(constantRegex))
+        else if (constantAutomata.verifySequence(atom))
         {
-            Type type = Type.CONSTANT;
+            Type type = Type.__CONSTANT;
             Integer index = getIndexFromSymbolTable(atom);
 
-            PifElement element = new PifElement(constantCode, index, type);
+            PifElement element = new PifElement(constantCode, index, type, atom);
             programInternalForm.add(element);
         }
         else
