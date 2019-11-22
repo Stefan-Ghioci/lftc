@@ -123,12 +123,17 @@ public class Main
                     System.out.print(states.get(i) + "\t");
 
                     for (String symbol : alphabet)
+                    {
                         for (int k = 0; k < transitions.get(i).size(); k++)
+                        {
                             if (transitions.get(i).get(k).contains(symbol))
                             {
-                                System.out.print(states.get(k) + "\t");
+                                System.out.print(states.get(k));
                                 break;
                             }
+                        }
+                        System.out.print("\t");
+                    }
 
                     System.out.println();
                 }
