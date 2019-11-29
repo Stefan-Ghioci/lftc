@@ -28,8 +28,6 @@
 		int type;
 	};
 
-	int identifier_code = 1;
-	int constant_code = 2;
 	int non_symbol_code_base = 3;
 
 	int line = 1; 
@@ -119,29 +117,58 @@ int main()
 	non_symbol_size = add_from_file("resources/specification/separators.txt", non_symbol_size, non_symbols);
 
 
+	// STORE IDENTIFIERS AND CONSTANTS
+
+	char* symbols[1000];
+	int symbols_size = 0;
+
+	for(int i = 0; i < atoms_size; i++)
+		if(atoms[i].type == 2 || atoms[i].type == 3)
+		{
+			int found = 0;
+			for(int j = 0; j < symbols_size; j++)
+				if(strcmp(atoms[i].value, symbols[j]) == 0)
+					found = 1;
+			if (found == 0)
+				symbols[symbols_size++] = atoms[i].value;
+		}
+
 	// PRINT PROGRAM INTERNAL FORM
 	for(int i = 0; i < atoms_size; i++)
 	{
-		int code = non_symbol_code_base;
+		int code;
+		int index = -1;
+		if(atoms[i].type == 2 || atoms[i].type == 3)
+		{
+			code = atoms[i].type - 1;
 
-		for(int j = 0; j < non_symbol_size; j++)
-			if(strcmp(atoms[i].value, non_symbols[j]) == 0)
-				code += j;
-
+			for(int j = 0; j < symbols_size; j++)
+				if(strcmp(atoms[i].value, symbols[j]) == 0)
+					index = j;
+		}
+		else
+		{
+			code = non_symbol_code_base;
+			for(int j = 0; j < non_symbol_size; j++)
+				if(strcmp(atoms[i].value, non_symbols[j]) == 0)
+					code += j;
+		}
 		switch(atoms[i].type)
 		{
 			case 0: // SEPARATOR
-				printf("code: %d \t index: -1 \t type:  SEPARATOR \t value: %s \n", code, atoms[i].value);
+				printf("code: %d \t index: %d \t type:  SEPARATOR \t value: %s \n", code, index, atoms[i].value);
 				break;
 			case 1: // KEYWORD
-				printf("code: %d \t index: -1 \t type:    KEYWORD \t value: %s \n", code, atoms[i].value);
+				printf("code: %d \t index: %d \t type:    KEYWORD \t value: %s \n", code, index, atoms[i].value);
 				break;
 			case 2: // IDENTIFIER
+				printf("code: %d \t index: %d \t type: IDENTIFIER \t value: %s \n", code, index, atoms[i].value);
 				break;
 			case 3: // CONSTANT
+				printf("code: %d \t index: %d \t type:   CONSTANT \t value: %s \n", code, index, atoms[i].value);
 				break;
 			case 4: // OPERATOR
-				printf("code: %d \t index: -1 \t type:   OPERATOR \t value: %s \n", code, atoms[i].value);
+				printf("code: %d \t index: %d \t type:   OPERATOR \t value: %s \n", code, index, atoms[i].value);
 				break;
 		}
 	}
