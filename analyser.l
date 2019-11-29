@@ -28,6 +28,8 @@
 		int type;
 	};
 
+	int return_code = 0;
+
 	int non_symbol_code_base = 3;
 
 	int line = 1; 
@@ -94,6 +96,7 @@ WHITESPACE	 	[ \t]+
 {WHITESPACE}	{	pos++;	}
 .				{
 					printf("Error - unrecognized character \"%s\" on line %d, position %d.", yytext, line, pos);
+					return_code = -1;
 					yyterminate();
 				}
 %% 
@@ -109,6 +112,8 @@ int main()
 	yyin = fp; 
 	yylex(); 
 
+	if(return_code != 0)
+		return return_code;
 
 	char* non_symbols[1000];
 	int non_symbol_size = 0;
