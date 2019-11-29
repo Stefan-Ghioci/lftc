@@ -133,7 +133,7 @@ int main()
 				symbols[symbols_size++] = atoms[i].value;
 		}
 
-	// PRINT PROGRAM INTERNAL FORM
+	printf("PROGRAM INTERNAL FORM: \n");
 	for(int i = 0; i < atoms_size; i++)
 	{
 		int code;
@@ -172,5 +172,10 @@ int main()
 				break;
 		}
 	}
+
+	printf("SYMBOLS TABLE: \n");
+	for(int i = 0; i < symbols_size; i++)
+		printf("index: %d \t value: %s\n", i, symbols[i]);
+
 	return 0; 
 }
