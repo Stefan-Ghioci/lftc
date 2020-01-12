@@ -1,3 +1,5 @@
 exec
 lex.yy.c
 out
+out.o
+out.asm
