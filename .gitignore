@@ -3,3 +3,5 @@ lex.yy.c
 out
 out.o
 out.asm
+y.tab.c
+y.tab.h
