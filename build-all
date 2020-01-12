@@ -1,0 +1,4 @@
+#!/bin/bash
+bison -d syntax-analyzer.y &
+flex flex.l &
+g++ lex.yy.c syntax-analyzer.tab.c -lfl -o syntax-analyzer

@@ -1,0 +1,16 @@
+main(){
+    float pi = 3.14;
+    float radius = 0.0;
+    cout << "Raza = ";
+    cin >> radius;
+    float perim = 2.0*pi;
+    float perim = perim*radius;
+    float area = pi*radius;
+    float area = area*radius;
+    cout << "Perimetru = ";
+    cout << perim;
+    cout << endl;
+    cout << "Aria = ";
+    cout << area;
+    cout << endl;
+}

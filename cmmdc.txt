@@ -1,0 +1,18 @@
+main(){
+    int a = 0;
+    int b = 0;
+    int cmmdc = 0;
+    cout << "A = ";
+    cin >> a;
+    cout << "B = ";
+    cin >> a;
+    while(b > 0){
+        cmmdc = a % b;
+        a = b;
+        b = cmmdc;
+    }
+    cmmdc = a;
+    cout << "Cmmdc = ";
+    cout << cmmdc;
+    cout << endl;
+}
