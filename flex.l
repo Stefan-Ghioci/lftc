@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "attrib.h"
 #include "y.tab.h"
 
 extern int lineno;  /* defined in bison */

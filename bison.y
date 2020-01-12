@@ -10,7 +10,6 @@
 #include<string.h>
 #include<stdio.h>
 #include<stdlib.h>
-#include "attrib.h"
 
 int  lineno = 1; /* number of current source line */
 
@@ -45,7 +44,6 @@ void newTempName(char *s);
 
 %union {
 	char varname[10];
-	attributes attrib;
 }
 
 
@@ -87,8 +85,8 @@ void newTempName(char *s);
 
 %token <varname> ID
 %token <varname> CONST 
-%type <attrib> expresie
-%type <attrib> termen
+%type <varname> expresie
+%type <varname> termen
 
 
 %%
@@ -132,7 +130,7 @@ instr_atribuire: ID ASSUME expresie SEMICOLON
 						{
 							char *tmp = (char *)malloc(sizeof(char)*100);
 							//expression result is in temp, so we move it into ID
-							sprintf(tmp, "mov eax, [%s]\n", $3.varn);
+							sprintf(tmp, "mov eax, [%s]\n", $3);
 							addTempToCS(tmp);
 							sprintf(tmp, "mov [%s], eax\n", $1);
 							addTempToCS(tmp);
@@ -146,13 +144,13 @@ expresie: termen
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
 					newTempName(temp);
-					strcpy($$.varn, temp); 
+					strcpy($$, temp); 
 					
 					//add code instructions
 					char *tmp = (char *)malloc(sizeof(char)*100);
-					sprintf(tmp, "mov ebx, dword [%s]\n", $1.varn);
+					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
 					addTempToCS(tmp);
-					sprintf(tmp, "mov ecx, dword [%s]\n", $3.varn);
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
 					addTempToCS(tmp);
 					sprintf(tmp, "add ebx, ecx\n");
 					addTempToCS(tmp);
@@ -164,13 +162,13 @@ expresie: termen
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
 					newTempName(temp);
-					strcpy($$.varn, temp); 
+					strcpy($$, temp); 
 								
 					//sub code instructions
 					char *tmp = (char *)malloc(sizeof(char)*100);
-					sprintf(tmp, "mov ebx, dword [%s]\n", $1.varn);
+					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
 					addTempToCS(tmp);
-					sprintf(tmp, "mov ecx, dword [%s]\n", $3.varn);
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
 					addTempToCS(tmp);
 					sprintf(tmp, "sub ebx, ecx\n");
 					addTempToCS(tmp);
@@ -182,13 +180,13 @@ expresie: termen
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
 					newTempName(temp);
-					strcpy($$.varn, temp); 
+					strcpy($$, temp); 
 					
 					//multiply code instructions
 					char *tmp = (char *)malloc(sizeof(char)*100);
 					sprintf(tmp, "mov edx, 0\n");
 					addTempToCS(tmp);
-					sprintf(tmp, "mov eax, dword [%s]\n", $1.varn);
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
 					addTempToCS(tmp);
 					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
 					addTempToCS(tmp);
@@ -202,13 +200,13 @@ expresie: termen
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
 					newTempName(temp);
-					strcpy($$.varn, temp); 
+					strcpy($$, temp); 
 					
 					//multiply code instructions
 					char *tmp = (char *)malloc(sizeof(char)*100);
 					sprintf(tmp, "mov edx, 0\n");
 					addTempToCS(tmp);
-					sprintf(tmp, "mov eax, dword [%s]\n", $1.varn);
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
 					addTempToCS(tmp);
 					sprintf(tmp, "mov ecx, %s\n", $3);
 					addTempToCS(tmp);
@@ -222,13 +220,13 @@ expresie: termen
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
 					newTempName(temp);
-					strcpy($$.varn, temp); 
+					strcpy($$, temp); 
 							
 					//divide code instructions
 					char *tmp = (char *)malloc(sizeof(char)*100);
 					sprintf(tmp, "mov edx, 0\n");
 					addTempToCS(tmp);
-					sprintf(tmp, "mov eax, dword [%s]\n", $1.varn);
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
 					addTempToCS(tmp);
 					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
 					addTempToCS(tmp);
@@ -242,13 +240,13 @@ expresie: termen
 				//make new temp
 				char *temp = (char *)malloc(sizeof(char)*100);
 				newTempName(temp);
-				strcpy($$.varn, temp); 
+				strcpy($$, temp); 
 						
 				//divide code instructions
 				char *tmp = (char *)malloc(sizeof(char)*100);
 				sprintf(tmp, "mov edx, 0\n");
 				addTempToCS(tmp);
-				sprintf(tmp, "mov eax, dword [%s]\n", $1.varn);
+				sprintf(tmp, "mov eax, dword [%s]\n", $1);
 				addTempToCS(tmp);
 				sprintf(tmp, "mov ecx, %s\n", $3);
 				addTempToCS(tmp);
@@ -268,42 +266,32 @@ instr_io: WRITE LEFT_BRACKET ID RIGHT_BRACKET SEMICOLON
 	| READ LEFT_BRACKET termen RIGHT_BRACKET SEMICOLON	
 	{
 		char *tmp = (char *)malloc(sizeof(char)*100);
-		sprintf(tmp, "push %s\npush formatin\ncall scanf\nadd esp, 8\n", $3.varn);
+		sprintf(tmp, "push %s\npush formatin\ncall scanf\nadd esp, 8\n", $3);
 		addTempToCS(tmp);
 	}
 	;
 
  
-termen: ID			
-				{
-					strcpy($$.cod, "");
-					strcpy($$.varn, $1);
-				}
+termen: ID		
 		| CONST	
-			{
-				strcpy($$.cod, "");
-				strcpy($$.varn, $1); 
-			}
 		;
 			
 %%
 
-int main(int argc, char *argv[]) {	
+int main(int argc, char *argv[]) 
+{	
 	memset(DS, 0, 1000);
 	memset(CS, 0, 1000);
 
-	//open the file in read mode
-	FILE *f = fopen("in.in", "r");
+	FILE *f = fopen(argv[1], "r");
 	if(!f) {
 		perror("Could not open file!");
 		exit(1);
 	}
-	//set the input for the flex file
+
 	yyin = f;
-	//read each line from the input file and process it
-	while(!feof(yyin)) {
-		yyparse();
-	}
+	
+	while(!feof(yyin)) { yyparse(); }
 
 	writeAssemblyToFile();
 	
@@ -356,8 +344,7 @@ void newTempName(char *s) {
 }
 
 
-void yyerror(char *s) {
-	printf( "Syntax error on line #%d: %s\n", lineno, s);
-	printf( "Last token was \"%s\"\n", yytext);
+void yyerror(char *err) {
+	printf( "Unexpected token \"%s\" on line #%d: %s \n", yytext, lineno, err);
 	exit(1);
 }
