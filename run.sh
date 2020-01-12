@@ -1,7 +1,7 @@
 #!/bin/bash
 
 bison -t --debug -dy bison.y
-flex flex.lex
+flex flex.l
 
 gcc lex.yy.c y.tab.c -o exec
 ./exec
