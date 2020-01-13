@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int  CURRENT_LINE = 1;
+int CURRENT_LINE 	= 1;
+int TEMPORARY_INDEX = 0;
 
 extern int yylex();
 extern int yyparse();
@@ -28,10 +29,8 @@ void addTempToCS(char *s);
 //write the assembly code to file
 void writeAssemblyToFile(char *file);
 
-//counter for the temp variables
-int tempnr = 1;
-//create a new temp variable and add it to DS
-void newTempName(char *s);
+
+void declare_temporary_variable(char *s);
 
 %}
 
@@ -81,7 +80,7 @@ begin_prog:	MAIN LEFT_BRACKET RIGHT_BRACKET
 end_prog: RETURN CONST SEMICOLON
 			;
 
-lista_declaratii: decl 
+lista_declaratii: decl
 	| decl lista_declaratii 
 	;
 
@@ -123,7 +122,7 @@ expresie: termen
 				{
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
-					newTempName(temp);
+					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 					
 					//add code instructions
@@ -141,7 +140,7 @@ expresie: termen
 				{
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
-					newTempName(temp);
+					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 								
 					//sub code instructions
@@ -159,7 +158,7 @@ expresie: termen
 				{
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
-					newTempName(temp);
+					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 					
 					//multiply code instructions
@@ -179,7 +178,7 @@ expresie: termen
 				{
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
-					newTempName(temp);
+					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 					
 					//multiply code instructions
@@ -199,7 +198,7 @@ expresie: termen
 				{
 					//make new temp
 					char *temp = (char *)malloc(sizeof(char)*100);
-					newTempName(temp);
+					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 							
 					//divide code instructions
@@ -219,7 +218,7 @@ expresie: termen
 			{
 				//make new temp
 				char *temp = (char *)malloc(sizeof(char)*100);
-				newTempName(temp);
+				declare_temporary_variable(temp);
 				strcpy($$, temp); 
 						
 				//divide code instructions
@@ -322,11 +321,11 @@ void writeAssemblyToFile(char *file) {
 }
 
 
-void newTempName(char *s) {
-	sprintf(s, "temp%d: times 4 db 0\n", tempnr);
+void declare_temporary_variable(char *s) {
+	sprintf(s, "_temp%d: times 4 db 0\n", TEMPORARY_INDEX);
 	addTempToDS(s);
-	sprintf(s, "temp%d", tempnr);
-	tempnr++;
+	sprintf(s, "_temp%d", TEMPORARY_INDEX);
+	TEMPORARY_INDEX++;
 }
 
 

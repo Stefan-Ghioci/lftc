@@ -4,7 +4,7 @@ formatout: db "%d", 10, 0
 a: times 4 db 0
 b: times 4 db 0
 c: times 4 db 0
-temp1: times 4 db 0
+_temp0: times 4 db 0
 
 section .text
 global main
@@ -22,8 +22,8 @@ add esp, 8
 mov ebx, dword [a]
 mov ecx, dword [b]
 add ebx, ecx
-mov [temp1], ebx
-mov eax, [temp1]
+mov [_temp0], ebx
+mov eax, [_temp0]
 mov [c], eax
 push dword [c]
 push formatout
