@@ -1,17 +1,11 @@
-int main () 
+main () 
 {
     int a;
     int b;
     int c;
-    int d;
     read(a);
     read(b);
-    read(d);
     c=a+b;
-    c=c+d;
     write(c);
-    read(a);
-    a=a*b;
-    write(a);
     return 0;
 }

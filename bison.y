@@ -42,49 +42,37 @@ void newTempName(char *s);
 
 %}
 
-%union {
+%union 
+{
 	char varname[10];
 }
 
+%token MAIN
 
-%token BEGIN_PROGRAM
-%token END_PROGRAM
-%token BEGIN_BLOCK
-%token END_BLOCK
+
+%token LEFT_BRACKET
+%token RIGHT_BRACKET
+%token LEFT_ACOL
+%token RIGHT_ACOL
+%token RETURN
+%token SEMICOLON
+
 %token INT
-%token REAL
-%token ARRAY_INT
-%token ARRAY_REAL
-%token READ
-%token WRITE
-%token IF
-%token ELSE
-%token WHILE
-%token NE
-%token GT
-%token LT
-%token EQ
-%token GE
-%token LE
-%token ASSUME
+
+%token ASSIGN
 %token PLUS
 %token MINUS
 %token MULTIPLY
 %token DIVIDE
-%token AND
-%token SEMICOLON
-%token COMMA
-%token LEFT_BRACKET
-%token RIGHT_BRACKET
-%token SQUARE_LEFT_BRACKET
-%token SQUARE_RIGHT_BRACKET
-%token MAIN
-%token LEFT_ACOL
-%token RIGHT_ACOL
-%token RETURN
+%token MODULO
+
+%token READ
+%token WRITE
+
 
 %token <varname> ID
-%token <varname> CONST 
+%token <varname> CONST
+
 %type <varname> expresie
 %type <varname> termen
 
@@ -94,7 +82,7 @@ void newTempName(char *s);
 program: begin_prog LEFT_ACOL lista_declaratii  lista_instr  end_prog RIGHT_ACOL
 			;
 
-begin_prog:	INT MAIN LEFT_BRACKET RIGHT_BRACKET 
+begin_prog:	MAIN LEFT_BRACKET RIGHT_BRACKET 
 				;
 			
 end_prog: RETURN CONST SEMICOLON
@@ -115,7 +103,6 @@ decl: tip ID SEMICOLON
 	;
 
 tip: INT
-	| REAL 
 	;
 	
 lista_instr: instr 
@@ -126,7 +113,7 @@ instr: instr_atribuire
 	| instr_io
 	;
 
-instr_atribuire: ID ASSUME expresie SEMICOLON		
+instr_atribuire: ID ASSIGN expresie SEMICOLON		
 						{
 							char *tmp = (char *)malloc(sizeof(char)*100);
 							//expression result is in temp, so we move it into ID
