@@ -1,14 +1,9 @@
-/*
- * Lexical analizer for the chosen language.
- * Matches each word to a regex.
- */
-
 %{
 #include <string.h>
 #include <stdlib.h>
 #include "y.tab.h"
 
-extern int lineno;
+extern int CURRENT_LINE;
 
 %}
 
@@ -42,10 +37,16 @@ write				        	{ return WRITE; }
 
 
 [ \t\r]*				        { /* IGNORE */ }
-[\n]            		        { lineno++; }
+[\n]            		        { CURRENT_LINE++; }
 
-([a-zA-Z]+[0-9]*)			    {  strcpy(yylval.varname,yytext); return ID;}
-([0-9]|[1-9][0-9]+)			    {  strcpy(yylval.varname,yytext); return CONST;}
+([a-zA-Z]+[0-9]*)			    { 
+                                    strcpy(yylval.varname, yytext); 
+                                    return ID;
+                                }
+([0-9]|[1-9][0-9]+)			    { 
+                                    strcpy(yylval.varname, yytext); 
+                                    return CONST; 
+                                }
 
 
 %%

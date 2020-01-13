@@ -1,0 +1,16 @@
+#!/bin/bash
+
+bison -dy bison.y
+flex flex.l
+gcc lex.yy.c y.tab.c -o compiler 
+
+./compiler $1
+
+nasm -f elf32 ${1%.*}.asm
+gcc -m32 ${1%.*}.o -o ${1%.*}
+
+rm ${1%.*}.o
+rm compiler
+rm lex.yy.c
+rm y.tab.c
+rm y.tab.h

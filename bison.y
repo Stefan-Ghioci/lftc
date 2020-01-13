@@ -1,17 +1,10 @@
-/*
- * Lexical analizer for the chosen language.
- * Reads symbols from an input file an processes them.
- */
-
 %{
-#ifdef YYDEBUG
-  yydebug = 1;
-#endif
-#include<string.h>
-#include<stdio.h>
-#include<stdlib.h>
 
-int  lineno = 1; /* number of current source line */
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int  CURRENT_LINE = 1;
 
 extern int yylex();
 extern int yyparse();
@@ -33,7 +26,7 @@ void addTempToDS(char *s);
 void addTempToCS(char *s);
 
 //write the assembly code to file
-void writeAssemblyToFile();
+void writeAssemblyToFile(char *file);
 
 //counter for the temp variables
 int tempnr = 1;
@@ -271,7 +264,9 @@ int main(int argc, char *argv[])
 	memset(CS, 0, 1000);
 
 	FILE *f = fopen(argv[1], "r");
-	if(!f) {
+
+	if(!f) 
+	{
 		perror("Could not open file!");
 		exit(1);
 	}
@@ -280,7 +275,9 @@ int main(int argc, char *argv[])
 	
 	while(!feof(yyin)) { yyparse(); }
 
-	writeAssemblyToFile();
+	char *file = strtok(argv[1], ".");
+
+	writeAssemblyToFile(file);
 	
 	return 0;
 }
@@ -295,7 +292,7 @@ void addTempToCS(char *s) {
 	strcat(CS, s);
 }
 
-void writeAssemblyToFile() {
+void writeAssemblyToFile(char *file) {
 	char* dataSectionHeader = (char*) malloc(sizeof(char)*100);
 	char* codeSectionHeader = (char*) malloc(sizeof(char)*100);
 	char* exitCall = (char*) malloc(sizeof(char)*100);
@@ -305,9 +302,11 @@ void writeAssemblyToFile() {
 	sprintf(codeSectionHeader, "\nsection .text\nglobal main\nextern scanf\nextern printf\nmain:\n");
 	sprintf(exitCall, "\nmov eax, 0\nret\n");
 
-	FILE *f = fopen("out.asm", "w");
+	strcat(file, ".asm");
+
+	FILE *f = fopen(file, "w");
 	if(f == NULL) {
-		perror("Failed to open file \"out.asm\".");
+		perror("Failed to open asm file.");
 		exit(1);
 	}
 	fwrite(dataSectionHeader, strlen(dataSectionHeader), 1, f);
@@ -332,6 +331,6 @@ void newTempName(char *s) {
 
 
 void yyerror(char *err) {
-	printf( "Unexpected token \"%s\" on line #%d: %s \n", yytext, lineno, err);
+	printf( "Unexpected token \"%s\" on line #%d: %s \n", yytext, CURRENT_LINE, err);
 	exit(1);
 }
