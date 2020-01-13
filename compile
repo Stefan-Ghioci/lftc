@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bison -dy bison.y
+bison -dy -Wnone bison.y
 flex flex.l
 gcc lex.yy.c y.tab.c -o compiler 
 

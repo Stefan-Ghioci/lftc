@@ -14,20 +14,16 @@ extern char *yytext;
 
 void yyerror(char *s);
 
-//the variable containing the DataSegment for the assembly program
-char DS[1000];
 
-//the variable containing the CodeSegment for the assembly program
-char CS[1000];
+char data_section_buffer[1000];
 
-//add variables to DataSegment
-void addTempToDS(char *s);
+char code_section_buffer[1000];
 
-//add assembly code to CodeSegment
-void addTempToCS(char *s);
+void write_line_to_data_section(char *s);
 
-//write the assembly code to file
-void writeAssemblyToFile(char *file);
+void write_line_to_code_section(char *s);
+
+void write_assembly_to_file(char *file);
 
 
 void declare_temporary_variable(char *s);
@@ -36,7 +32,7 @@ void declare_temporary_variable(char *s);
 
 %union 
 {
-	char varname[10];
+	char var_name[10];
 }
 
 %token MAIN
@@ -44,8 +40,8 @@ void declare_temporary_variable(char *s);
 
 %token LEFT_BRACKET
 %token RIGHT_BRACKET
-%token LEFT_ACOL
-%token RIGHT_ACOL
+%token LEFT_BRACE
+%token RIGHT_BRACE
 %token RETURN
 %token SEMICOLON
 
@@ -56,202 +52,450 @@ void declare_temporary_variable(char *s);
 %token MINUS
 %token MULTIPLY
 %token DIVIDE
-%token MODULO
 
 %token READ
 %token WRITE
 
 
-%token <varname> ID
-%token <varname> CONST
+%token <var_name> ID
+%token <var_name> CONST
 
-%type <varname> expresie
-%type <varname> termen
+%type <var_name> expression
+%type <var_name> term
 
 
 %%
 	
-program: begin_prog LEFT_ACOL lista_declaratii  lista_instr  end_prog RIGHT_ACOL
+program: 	program_start LEFT_BRACE declarations  instructions  program_end RIGHT_BRACE
 			;
 
-begin_prog:	MAIN LEFT_BRACKET RIGHT_BRACKET 
+program_start:	MAIN LEFT_BRACKET RIGHT_BRACKET 
 				;
 			
-end_prog: RETURN CONST SEMICOLON
-			;
+program_end: 	RETURN CONST SEMICOLON
+				;
 
-lista_declaratii: decl
-	| decl lista_declaratii 
-	;
+declarations: 	declaration
+				| declaration declarations 
+				;
 
 
-decl: tip ID SEMICOLON
-		{
-			char *tmp = (char *)malloc(sizeof(char)*100);
-			sprintf(tmp, "%s: times 4 db 0\n", $2);
-			addTempToDS(tmp);
-			free(tmp);
-		}
-	;
+declaration: 	type ID SEMICOLON
+					{
+						char *tmp = (char *)malloc(sizeof(char)*100);
+						sprintf(tmp, "%s: times 4 db 0\n", $2);
+						write_line_to_data_section(tmp);
+						free(tmp);
+					}
+				;
 
-tip: INT
-	;
-	
-lista_instr: instr 
-		| instr lista_instr 
+type: 	INT
 		;
+	
+instructions:	instruction 
+				| instruction instructions 
+				;
 				
-instr: instr_atribuire
-	| instr_io
-	;
+instruction:	assign_instruction
+				| io_instruction
+				;
 
-instr_atribuire: ID ASSIGN expresie SEMICOLON		
+assign_instruction: ID ASSIGN CONST SEMICOLON 
 						{
 							char *tmp = (char *)malloc(sizeof(char)*100);
-							//expression result is in temp, so we move it into ID
-							sprintf(tmp, "mov eax, [%s]\n", $3);
-							addTempToCS(tmp);
+							
+							sprintf(tmp, "mov eax, %s\n", $3);
+							write_line_to_code_section(tmp);
 							sprintf(tmp, "mov [%s], eax\n", $1);
-							addTempToCS(tmp);
+							write_line_to_code_section(tmp);
+							free(tmp);
+						}
+					| ID ASSIGN expression SEMICOLON		
+						{
+							char *tmp = (char *)malloc(sizeof(char)*100);
+							
+							sprintf(tmp, "mov eax, [%s]\n", $3);
+							write_line_to_code_section(tmp);
+							sprintf(tmp, "mov [%s], eax\n", $1);
+							write_line_to_code_section(tmp);
 							free(tmp);
 						}
 					;
 
-expresie: termen
-			| termen PLUS termen
+expression: term
+			| ID PLUS ID
 				{
-					//make new temp
+					
 					char *temp = (char *)malloc(sizeof(char)*100);
 					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 					
-					//add code instructions
+					
 					char *tmp = (char *)malloc(sizeof(char)*100);
+
 					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
+
 					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
+
 					sprintf(tmp, "add ebx, ecx\n");
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
+
 					sprintf(tmp, "mov [%s], ebx\n", temp);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 				}
-			| termen MINUS termen
+			| ID PLUS CONST
 				{
-					//make new temp
+					
 					char *temp = (char *)malloc(sizeof(char)*100);
 					declare_temporary_variable(temp);
 					strcpy($$, temp); 
-								
-					//sub code instructions
+					
+					
 					char *tmp = (char *)malloc(sizeof(char)*100);
+
 					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
-					addTempToCS(tmp);
-					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
-					addTempToCS(tmp);
-					sprintf(tmp, "sub ebx, ecx\n");
-					addTempToCS(tmp);
-					sprintf(tmp, "mov [%s], ebx\n", temp);
-					addTempToCS(tmp);
-				}
-			| termen MULTIPLY ID
-				{
-					//make new temp
-					char *temp = (char *)malloc(sizeof(char)*100);
-					declare_temporary_variable(temp);
-					strcpy($$, temp); 
-					
-					//multiply code instructions
-					char *tmp = (char *)malloc(sizeof(char)*100);
-					sprintf(tmp, "mov edx, 0\n");
-					addTempToCS(tmp);
-					sprintf(tmp, "mov eax, dword [%s]\n", $1);
-					addTempToCS(tmp);
-					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
-					addTempToCS(tmp);
-					sprintf(tmp, "mul ecx\n");
-					addTempToCS(tmp);
-					sprintf(tmp, "mov [%s], eax\n", temp);
-					addTempToCS(tmp);
-				}
-			| termen MULTIPLY CONST
-				{
-					//make new temp
-					char *temp = (char *)malloc(sizeof(char)*100);
-					declare_temporary_variable(temp);
-					strcpy($$, temp); 
-					
-					//multiply code instructions
-					char *tmp = (char *)malloc(sizeof(char)*100);
-					sprintf(tmp, "mov edx, 0\n");
-					addTempToCS(tmp);
-					sprintf(tmp, "mov eax, dword [%s]\n", $1);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
+
 					sprintf(tmp, "mov ecx, %s\n", $3);
-					addTempToCS(tmp);
-					sprintf(tmp, "mul ecx\n");
-					addTempToCS(tmp);
-					sprintf(tmp, "mov [%s], eax\n", temp);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "add ebx, ecx\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
 				}
-			| termen DIVIDE ID
+			| CONST PLUS ID
 				{
-					//make new temp
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, %s\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "add ebx, ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST PLUS CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, %s\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "add ebx, ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| ID MINUS ID
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "sub ebx, ecx\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| ID MINUS CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, dword [%s]\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "sub ebx, ecx\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST MINUS ID
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, %s\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "sub ebx, ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST MINUS CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+
+					sprintf(tmp, "mov ebx, %s\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "sub ebx, ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], ebx\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| ID MULTIPLY ID
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mul ecx\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| ID MULTIPLY CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mul ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST MULTIPLY ID
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov eax, %s\n", $1);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mul ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST MULTIPLY CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+					
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+
+					sprintf(tmp, "mov eax, %s\n", $1);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mul ecx\n");
+					write_line_to_code_section(tmp);
+					
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| ID DIVIDE ID
+				{
+					
 					char *temp = (char *)malloc(sizeof(char)*100);
 					declare_temporary_variable(temp);
 					strcpy($$, temp); 
 							
-					//divide code instructions
+					
 					char *tmp = (char *)malloc(sizeof(char)*100);
 					sprintf(tmp, "mov edx, 0\n");
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 					sprintf(tmp, "mov eax, dword [%s]\n", $1);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 					sprintf(tmp, "div ecx\n");
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 					sprintf(tmp, "mov [%s], eax\n", temp);
-					addTempToCS(tmp);
+					write_line_to_code_section(tmp);
 				}
-			| termen DIVIDE CONST
-			{
-				//make new temp
-				char *temp = (char *)malloc(sizeof(char)*100);
-				declare_temporary_variable(temp);
-				strcpy($$, temp); 
-						
-				//divide code instructions
-				char *tmp = (char *)malloc(sizeof(char)*100);
-				sprintf(tmp, "mov edx, 0\n");
-				addTempToCS(tmp);
-				sprintf(tmp, "mov eax, dword [%s]\n", $1);
-				addTempToCS(tmp);
-				sprintf(tmp, "mov ecx, %s\n", $3);
-				addTempToCS(tmp);
-				sprintf(tmp, "div ecx\n");
-				addTempToCS(tmp);
-				sprintf(tmp, "mov [%s], eax\n", temp);
-				addTempToCS(tmp);
-			}
-			;
+			| ID DIVIDE CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+							
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov eax, dword [%s]\n", $1);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "div ecx\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST DIVIDE ID
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+							
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov eax, %s\n", $1);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov ecx, dword [%s]\n", $3);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "div ecx\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+			| CONST DIVIDE CONST
+				{
+					
+					char *temp = (char *)malloc(sizeof(char)*100);
+					declare_temporary_variable(temp);
+					strcpy($$, temp); 
+							
+					
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "mov edx, 0\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov eax, %s\n", $1);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov ecx, %s\n", $3);
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "div ecx\n");
+					write_line_to_code_section(tmp);
+					sprintf(tmp, "mov [%s], eax\n", temp);
+					write_line_to_code_section(tmp);
+				}
+				;
 			  
-instr_io: WRITE LEFT_BRACKET ID RIGHT_BRACKET SEMICOLON
-	{
-		char *tmp = (char *)malloc(sizeof(char)*100);
-		sprintf(tmp, "push dword [%s]\npush formatout\ncall printf\nadd esp, 8\n", $3);
-		addTempToCS(tmp);
-	}	
-	| READ LEFT_BRACKET termen RIGHT_BRACKET SEMICOLON	
-	{
-		char *tmp = (char *)malloc(sizeof(char)*100);
-		sprintf(tmp, "push %s\npush formatin\ncall scanf\nadd esp, 8\n", $3);
-		addTempToCS(tmp);
-	}
-	;
+io_instruction: WRITE LEFT_BRACKET ID RIGHT_BRACKET SEMICOLON
+				{
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "push dword [%s]\npush formatout\ncall printf\nadd esp, 8\n", $3);
+					write_line_to_code_section(tmp);
+				}	
+				| READ LEFT_BRACKET ID RIGHT_BRACKET SEMICOLON	
+				{
+					char *tmp = (char *)malloc(sizeof(char)*100);
+					sprintf(tmp, "push %s\npush formatin\ncall scanf\nadd esp, 8\n", $3);
+					write_line_to_code_section(tmp);
+				}
+				;
 
  
-termen: ID		
+term: ID		
 		| CONST	
 		;
 			
@@ -259,8 +503,8 @@ termen: ID
 
 int main(int argc, char *argv[]) 
 {	
-	memset(DS, 0, 1000);
-	memset(CS, 0, 1000);
+	memset(data_section_buffer, 0, 1000);
+	memset(code_section_buffer, 0, 1000);
 
 	FILE *f = fopen(argv[1], "r");
 
@@ -275,61 +519,66 @@ int main(int argc, char *argv[])
 	while(!feof(yyin)) { yyparse(); }
 
 	char *file = strtok(argv[1], ".");
+	strcat(file, ".asm");
 
-	writeAssemblyToFile(file);
+	write_assembly_to_file(file);
 	
 	return 0;
 }
 
 
-void addTempToDS(char *s) {
-	strcat(DS, s);		
+void write_line_to_data_section(char *s) 
+{
+	strcat(data_section_buffer, s);		
 }
 
 
-void addTempToCS(char *s) {
-	strcat(CS, s);
+void write_line_to_code_section(char *s) 
+{
+	strcat(code_section_buffer, s);
 }
 
-void writeAssemblyToFile(char *file) {
-	char* dataSectionHeader = (char*) malloc(sizeof(char)*100);
-	char* codeSectionHeader = (char*) malloc(sizeof(char)*100);
-	char* exitCall = (char*) malloc(sizeof(char)*100);
+void write_assembly_to_file(char *file) 
+{
+	char* data_section_boilerplate = (char*) malloc(sizeof(char)*100);
+	char* code_section_boilerplate = (char*) malloc(sizeof(char)*100);
+	char* code_section_end = (char*) malloc(sizeof(char)*100);
 
 
-	sprintf(dataSectionHeader, "section .data\nformatin: db \"%%d\", 0\nformatout: db \"%%d\", 10, 0\n");
-	sprintf(codeSectionHeader, "\nsection .text\nglobal main\nextern scanf\nextern printf\nmain:\n");
-	sprintf(exitCall, "\nmov eax, 0\nret\n");
-
-	strcat(file, ".asm");
+	sprintf(data_section_boilerplate, "section .data\nformatin: db \"%%d\", 0\nformatout: db \"%%d\", 10, 0\n");
+	sprintf(code_section_boilerplate, "\nsection .text\nglobal main\nextern scanf\nextern printf\nmain:\n");
+	sprintf(code_section_end, "\nmov eax, 0\nret\n");
 
 	FILE *f = fopen(file, "w");
-	if(f == NULL) {
+	if(f == NULL) 
+	{
 		perror("Failed to open asm file.");
 		exit(1);
 	}
-	fwrite(dataSectionHeader, strlen(dataSectionHeader), 1, f);
-	fwrite(DS, strlen(DS), 1, f);
-	fwrite(codeSectionHeader, strlen(codeSectionHeader), 1, f);
-	fwrite(CS, strlen(CS), 1, f);
-	fwrite(exitCall, strlen(exitCall), 1, f);
+	fwrite(data_section_boilerplate, strlen(data_section_boilerplate), 1, f);
+	fwrite(data_section_buffer, strlen(data_section_buffer), 1, f);
+	fwrite(code_section_boilerplate, strlen(code_section_boilerplate), 1, f);
+	fwrite(code_section_buffer, strlen(code_section_buffer), 1, f);
+	fwrite(code_section_end, strlen(code_section_end), 1, f);
 
 	fclose(f);
-	free(dataSectionHeader);
-	free(codeSectionHeader);
-	free(exitCall);
+	free(data_section_boilerplate);
+	free(code_section_boilerplate);
+	free(code_section_end);
 }
 
 
-void declare_temporary_variable(char *s) {
+void declare_temporary_variable(char *s) 
+{
 	sprintf(s, "_temp%d: times 4 db 0\n", TEMPORARY_INDEX);
-	addTempToDS(s);
+	write_line_to_data_section(s);
 	sprintf(s, "_temp%d", TEMPORARY_INDEX);
 	TEMPORARY_INDEX++;
 }
 
 
-void yyerror(char *err) {
+void yyerror(char *err) 
+{
 	printf( "Unexpected token \"%s\" on line #%d: %s \n", yytext, CURRENT_LINE, err);
 	exit(1);
 }

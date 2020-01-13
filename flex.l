@@ -16,8 +16,8 @@ main			        		{ return MAIN; }
 
 "("				            	{ return LEFT_BRACKET; }
 ")"				            	{ return RIGHT_BRACKET; }
-"{"				            	{ return LEFT_ACOL; }
-"}"				        	    { return RIGHT_ACOL; }
+"{"				            	{ return LEFT_BRACE; }
+"}"				        	    { return RIGHT_BRACE; }
 "return"		    			{ return RETURN; }
 ";"					            { return SEMICOLON; }
 
@@ -30,7 +30,6 @@ int				              	{ return INT; }
 "-"				            	{ return MINUS; }
 "*"				            	{ return MULTIPLY; }
 "/"				            	{ return DIVIDE; }
-"%"                             { return MODULO; }
 
 read				        	{ return READ; }
 write				        	{ return WRITE; }
@@ -40,11 +39,11 @@ write				        	{ return WRITE; }
 [\n]            		        { CURRENT_LINE++; }
 
 ([a-zA-Z]+[0-9]*)			    { 
-                                    strcpy(yylval.varname, yytext); 
+                                    strcpy(yylval.var_name, yytext); 
                                     return ID;
                                 }
 ([0-9]|[1-9][0-9]+)			    { 
-                                    strcpy(yylval.varname, yytext); 
+                                    strcpy(yylval.var_name, yytext); 
                                     return CONST; 
                                 }
 
